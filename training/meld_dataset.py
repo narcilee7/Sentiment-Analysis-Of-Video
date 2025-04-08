@@ -207,10 +207,7 @@ def prepare_dataloaders(train_csv, train_video_dir, dev_csv, dev_video_dir, test
 
 
 if __name__ == '__main__':
-  # 使用绝对路径
-  # meld = MELDDataset("../dataset/dev/dev_sent_emo.csv",
-  #                     "../dataset/dev/dev_splits_complete")
-
+  
   train_loader, dev_loader, test_loader = prepare_dataloaders("../dataset/train/train_sent_emo.csv",
                                                               "../dataset/train/train_splits",
                                                               "../dataset/dev/dev_sent_emo.csv",
