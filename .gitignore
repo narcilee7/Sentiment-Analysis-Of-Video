@@ -1,0 +1,57 @@
+# 数据集文件
+data/
+dataset/
+*.csv
+*.json
+*.txt
+*.xlsx
+*.xls
+*.dat
+*.h5
+*.npy
+*.npz
+*.pkl
+*.pt
+*.pth
+
+# 大文件
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
