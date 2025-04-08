@@ -7,39 +7,37 @@ from sklearn.metrics import precision_score ,accuracy_score
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-from meld_dataset import MELDDataset
+from .meld_dataset import MELDDataset
 
 class TextEncoder(nn.Module):
   def __init__(self):
     super().__init__()
+    # 使用预训练的BERT模型
     self.bert = BertModel.from_pretrained('bert-base-uncased')
-
+    # 冻结BERT参数，只训练投影层
     for param in self.bert.parameters():
-      # 冻结Bert的参数，只训练自己的参数
       param.requires_grad = False
-
+    # 将768维BERT输出投影到128维
     self.projection = nn.Linear(768, 128)
   
   def forward(self, input_ids, attention_mask):
-    # Extract BERT embeddings
+    # 获取BERT的输出
     outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-
-    # Use [CLS] token representation
+    # 使用[CLS]标记的输出作为整个序列的表示
     pooled_output = outputs.pooler_output
-
+    # 投影到低维空间
     return self.projection(pooled_output)
   
 
 class VideoEncoder(nn.Module):
   def __init__(self):
     super().__init__()
-    # 使用预训练的R3D-18模型
+    # 使用预训练的R3D-18模型（3D ResNet）
     self.backbone = vision_models.video.r3d_18(pretrained=True)
-
+    # 冻结预训练模型参数
     for param in self.backbone.parameters():
-      # 冻结R3D-18模型的参数，只训练自己的参数
       param.requires_grad = False
-
+    # 替换最后的全连接层
     num_features = self.backbone.fc.in_features
     self.backbone.fc = nn.Sequential(
       nn.Linear(num_features, 128),
@@ -48,44 +46,36 @@ class VideoEncoder(nn.Module):
     )
   
   def forward(self, x):
-    # x: [batch_size, frames, channels, height, width] -> [batch_size, channels, frames, height, width]
-    # 输入视频帧，输出特征向量 
+    # 调整维度顺序以适应R3D-18的输入要求
     x = x.transpose(1, 2)
     return self.backbone(x)
 
 class AudioEncoder(nn.Module):
   def __init__(self):
     super().__init__()
-    # 使用预训练的ResNet-18模型
+    # 音频特征提取网络
     self.conv_layers = nn.Sequential(
-      # Lower Level feature extraction
+      # 低级特征提取
       nn.Conv1d(64, 64, kernel_size=3),
       nn.BatchNorm1d(64),
       nn.ReLU(),
       nn.MaxPool1d(kernel_size=2),
-      # High Level feature extraction
+      # 高级特征提取
       nn.Conv1d(64, 128, kernel_size=3),
       nn.BatchNorm1d(128),
       nn.ReLU(),
       nn.AdaptiveAvgPool1d(1)
     )
-
-    for param in self.conv_layers.parameters():
-      # 冻结ResNet-18模型的参数，只训练自己的参数
-      param.requires_grad = False
-
-
+    # 投影层
     self.projection = nn.Sequential(
       nn.Linear(128, 128),
       nn.ReLU(),
       nn.Dropout(0.2)
     )
-
+  
   def forward(self, x):
     x = x.squeeze(1)
-
     features = self.conv_layers(x)
-    # Features: [batch_size, 128, 1]
     return self.projection(features.squeeze(-1))
 
 # if __name__ == '__main__':
